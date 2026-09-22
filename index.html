@@ -16,7 +16,7 @@
 <style>
   :root {
     --bg: #F2F2F7; --card: #FFFFFF; --text-primary: #000000; --text-secondary: #6E6E73;
-    --separator: #D1D1D6; --tabbar-border: #D1D1D6; --tabbar-bg: rgba(249,249,249,0.94);
+    --separator: #D1D1D6; --tabbar-border: #C7C7CC; --tabbar-bg: #FFFFFF; --tab-tint: rgba(0,122,255,0.12); --tabbar-shadow: rgba(0,0,0,0.08);
     --accent: #007AFF; --inactive: #8E8E93; --error: #FF3B30; --warning: #FF9500;
     --private-fg: #1E8E3E; --private-bg: rgba(52,199,89,0.16);
     --global-fg: #C25E00; --global-bg: rgba(255,149,0,0.16);
@@ -26,7 +26,7 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #000000; --card: #1C1C1E; --text-primary: #FFFFFF; --text-secondary: #98989D;
-      --separator: #545458; --tabbar-border: #38383A; --tabbar-bg: rgba(28,28,30,0.94);
+      --separator: #545458; --tabbar-border: #545458; --tabbar-bg: #1C1C1E; --tab-tint: rgba(10,132,255,0.22); --tabbar-shadow: rgba(0,0,0,0.4);
       --accent: #0A84FF; --inactive: #8E8E93; --error: #FF453A; --warning: #FF9F0A;
       --private-fg: #30D158; --private-bg: rgba(48,209,88,0.18);
       --global-fg: #FF9F0A; --global-bg: rgba(255,159,10,0.18);
@@ -36,14 +36,14 @@
   }
   :root[data-theme="dark"] {
     --bg: #000000; --card: #1C1C1E; --text-primary: #FFFFFF; --text-secondary: #98989D;
-    --separator: #545458; --tabbar-border: #38383A; --tabbar-bg: rgba(28,28,30,0.94);
+    --separator: #545458; --tabbar-border: #545458; --tabbar-bg: #1C1C1E; --tab-tint: rgba(10,132,255,0.22); --tabbar-shadow: rgba(0,0,0,0.4);
     --accent: #0A84FF; --inactive: #8E8E93; --error: #FF453A; --warning: #FF9F0A;
     --private-fg: #30D158; --private-bg: rgba(48,209,88,0.18);
     --global-fg: #FF9F0A; --global-bg: rgba(255,159,10,0.18);
     --special-fg: #BF5AF2; --special-bg: rgba(191,90,242,0.2);
     --off-bg: #2C2C2E; --off-fg: #98989D;
   }
-  html, body { height: 100%; margin: 0; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
@@ -52,7 +52,7 @@
   }
   input, button { font-family: inherit; }
   [hidden] { display: none !important; }
-  .app { height: 100%; display: flex; flex-direction: column; max-width: 600px; margin: 0 auto; background: var(--bg); }
+  .app { position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; max-width: 600px; margin: 0 auto; background: var(--bg); }
   .screens { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   .status-spacer { height: calc(env(safe-area-inset-top, 0px) + 8px); flex-shrink: 0; }
@@ -140,18 +140,20 @@
   .preset.active { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
 
   /* Tab bar + toast */
-  .tabbar { flex-shrink: 0; display: flex; border-top: 0.5px solid var(--tabbar-border); background: var(--tabbar-bg); padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
-  .tab-btn { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 7px; min-height: 44px; cursor: pointer; }
+  .tabbar { flex-shrink: 0; display: flex; background: var(--tabbar-bg); border-top: 1.5px solid var(--tabbar-border); box-shadow: 0 -4px 12px var(--tabbar-shadow); padding: 6px 8px max(8px, env(safe-area-inset-bottom, 0px)) 8px; position: relative; z-index: 1; }
+  .tab-btn { flex: 1; background: none; border: none; padding: 0; min-height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .tab-inner { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 14px; border-radius: 14px; }
   .tab-btn svg { stroke: var(--inactive); }
   .tab-btn svg text { fill: var(--inactive); stroke: none; }
-  .tab-btn span { font-size: 10px; font-weight: 500; color: var(--inactive); }
+  .tab-btn .tab-label { font-size: 10px; font-weight: 500; color: var(--inactive); }
+  .tab-btn.active .tab-inner { background: var(--tab-tint); }
   .tab-btn.active svg { stroke: var(--accent); }
   .tab-btn.active svg text { fill: var(--accent); }
-  .tab-btn.active span { font-weight: 600; color: var(--accent); }
-  .update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 62px); width: calc(100% - 32px); max-width: 560px; background: var(--card); color: var(--text-primary); border: 1px solid var(--separator); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 9; }
+  .tab-btn.active .tab-label { font-weight: 700; color: var(--accent); }
+  .update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 74px); width: calc(100% - 32px); max-width: 560px; background: var(--card); color: var(--text-primary); border: 1px solid var(--separator); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 9; }
   .update-btn { flex-shrink: 0; min-height: 36px; padding: 0 16px; border-radius: 10px; border: none; background: var(--accent); color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer; }
   .app-version { font-size: 12px; color: var(--text-secondary); text-align: center; padding: 8px 0 4px 0; }
-  .toast { position: fixed; left: 50%; bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 70px); transform: translateX(-50%); max-width: calc(100% - 40px); background: var(--text-primary); color: var(--bg); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; z-index: 10; }
+  .toast { position: fixed; left: 50%; bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 80px); transform: translateX(-50%); max-width: calc(100% - 40px); background: var(--text-primary); color: var(--bg); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; z-index: 10; }
 </style>
 </head>
 <body>
@@ -271,16 +273,19 @@
 
   <nav class="tabbar">
     <button class="tab-btn active" type="button" data-tab="calc" aria-current="page">
+      <span class="tab-inner">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>
-      <span>Calculator</span>
+      <span class="tab-label">Calculator</span></span>
     </button>
     <button class="tab-btn" type="button" data-tab="list">
+      <span class="tab-inner">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
-      <span>Reference</span>
+      <span class="tab-label">Reference</span></span>
     </button>
     <button class="tab-btn" type="button" data-tab="binary">
+      <span class="tab-inner">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="2"><text x="12" y="16.5" text-anchor="middle" font-size="11" font-weight="700" font-family="-apple-system, sans-serif">01</text><rect x="3" y="4" width="18" height="16" rx="3"></rect></svg>
-      <span>Binary</span>
+      <span class="tab-label">Binary</span></span>
     </button>
   </nav>
 </div>
@@ -293,7 +298,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = 'v2.5';
+  var APP_VERSION = 'v2.6';
   document.querySelectorAll('.app-version').forEach(function (el) { el.textContent = 'Subnet Calc ' + APP_VERSION; });
 
   // ---------- Storage (best effort) ----------
