@@ -195,10 +195,10 @@
           <div class="group">
             <div class="caption">Usable Hosts</div>
             <div class="usable-card">
-              <div class="usable-range">
-                <span class="usable-ip copyable" id="val-first"></span>
+              <div class="usable-range copyable" id="usable-range">
+                <span class="usable-ip" id="val-first"></span>
                 <span class="usable-dash">–</span>
-                <span class="usable-ip copyable" id="val-last"></span>
+                <span class="usable-ip" id="val-last"></span>
               </div>
               <div class="usable-count-line">Usable Host Count: <span class="usable-count-value copyable" id="val-usable-count"></span></div>
               <div class="edge-note" id="edge-note" hidden></div>
@@ -534,8 +534,9 @@
     setCopy('val-broadcast', intToIp(broadcast));
     setCopy('val-mask', intToIp(mask));
     setCopy('val-total', total.toLocaleString('en-US'), String(total));
-    setCopy('val-first', first);
-    setCopy('val-last', last);
+    document.getElementById('val-first').textContent = first;
+    document.getElementById('val-last').textContent = last;
+    document.getElementById('usable-range').setAttribute('data-copy', first === last ? first : first + '-' + last);
     setCopy('val-usable-count', usable.toLocaleString('en-US'), String(usable));
     var edgeEl = document.getElementById('edge-note');
     edgeEl.textContent = edge; edgeEl.hidden = !edge;
@@ -568,9 +569,41 @@
       try { cidrInput.setSelectionRange(0, cidrInput.value.length); } catch (e) { cidrInput.select(); }
     }, 0);
   });
+  // ---------- Auto-format to canonical notation (e.g. 192.168.1.99.24 -> 192.168.1.99/24) ----------
+  function canonical(value) {
+    var s = String(value || '')
+      .replace(/[\uFF10-\uFF19]/g, function (d) { return String.fromCharCode(d.charCodeAt(0) - 0xFEE0); })
+      .replace(/[\u3000\uFF0E\uFF0F\u3002\uFF0C]/g, function (ch) { return ch === '\uFF0F' ? '/' : ch === '\u3000' ? ' ' : '.'; })
+      .trim();
+    if (parseInput(s).error) return null;
+    var t = s.split(/[\s.,\/]+/).map(function (x) { return String(Number(x)); });
+    return t.slice(0, 4).join('.') + '/' + t.slice(4).join('.');
+  }
+  function autoFormat(requireCaretAtEnd) {
+    var v = cidrInput.value;
+    var f = canonical(v);
+    if (!f || f === v) return;
+    if (requireCaretAtEnd && document.activeElement === cidrInput) {
+      var caretAtEnd = cidrInput.selectionStart === v.length && cidrInput.selectionEnd === v.length;
+      if (!caretAtEnd) return;
+    }
+    cidrInput.value = f;
+    storageSet('subnetcalc.lastInput', f);
+    if (document.activeElement === cidrInput) {
+      try { cidrInput.setSelectionRange(f.length, f.length); } catch (e) { /* ignore */ }
+    }
+    renderCalc();
+  }
+  var formatTimer = null;
   cidrInput.addEventListener('input', function () {
     storageSet('subnetcalc.lastInput', cidrInput.value);
     renderCalc();
+    clearTimeout(formatTimer);
+    formatTimer = setTimeout(function () { autoFormat(true); }, 2000);
+  });
+  cidrInput.addEventListener('blur', function () {
+    clearTimeout(formatTimer);
+    autoFormat(false);
   });
   renderCalc();
 
