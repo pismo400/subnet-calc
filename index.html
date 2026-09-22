@@ -148,6 +148,9 @@
   .tab-btn.active svg { stroke: var(--accent); }
   .tab-btn.active svg text { fill: var(--accent); }
   .tab-btn.active span { font-weight: 600; color: var(--accent); }
+  .update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 62px); width: calc(100% - 32px); max-width: 560px; background: var(--card); color: var(--text-primary); border: 1px solid var(--separator); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 9; }
+  .update-btn { flex-shrink: 0; min-height: 36px; padding: 0 16px; border-radius: 10px; border: none; background: var(--accent); color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .app-version { font-size: 12px; color: var(--text-secondary); text-align: center; padding: 8px 0 4px 0; }
   .toast { position: fixed; left: 50%; bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 70px); transform: translateX(-50%); max-width: calc(100% - 40px); background: var(--text-primary); color: var(--bg); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; z-index: 10; }
 </style>
 </head>
@@ -213,6 +216,7 @@
             </div>
           </div>
         </div>
+        <div class="app-version"></div>
       </div>
     </section>
 
@@ -231,6 +235,7 @@
       <div class="list-scroll">
         <div class="card" id="list-rows"></div>
         <div class="list-hint">Tap a subnet mask to copy it. Tap the prefix to copy the whole row.</div>
+        <div class="app-version"></div>
       </div>
     </section>
 
@@ -259,6 +264,7 @@
           <div class="presets" id="presets"></div>
           <div class="helper">Sets the octet to a subnet mask value</div>
         </div>
+        <div class="app-version"></div>
       </div>
     </section>
   </div>
@@ -278,11 +284,17 @@
     </button>
   </nav>
 </div>
+<div class="update-banner" id="update-banner" role="status" hidden>
+  <span>新しいバージョンがあります</span>
+  <button class="update-btn" id="update-btn" type="button">更新</button>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
 (function () {
   "use strict";
+  var APP_VERSION = 'v2.5';
+  document.querySelectorAll('.app-version').forEach(function (el) { el.textContent = 'Subnet Calc ' + APP_VERSION; });
 
   // ---------- Storage (best effort) ----------
   function storageGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -666,8 +678,36 @@
 
   // ---------- Offline support ----------
   if ('serviceWorker' in navigator) {
+    var banner = document.getElementById('update-banner');
+    var updateBtn = document.getElementById('update-btn');
+    var userRequestedUpdate = false;
+    var showUpdate = function (reg) {
+      banner.hidden = false;
+      updateBtn.onclick = function () {
+        if (!reg.waiting) { banner.hidden = true; return; }
+        userRequestedUpdate = true;
+        updateBtn.disabled = true;
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      };
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      // Reload only when the user tapped "更新". The new version is already fully cached, so this works offline.
+      if (userRequestedUpdate) window.location.reload();
+    });
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('./sw.js').catch(function () { /* offline cache unavailable */ });
+      navigator.serviceWorker.register('./sw.js').then(function (reg) {
+        var watch = function (worker) {
+          worker.addEventListener('statechange', function () {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdate(reg);
+          });
+        };
+        if (reg.waiting && navigator.serviceWorker.controller) showUpdate(reg);
+        if (reg.installing) watch(reg.installing);
+        reg.addEventListener('updatefound', function () { if (reg.installing) watch(reg.installing); });
+        var check = function () { if (navigator.onLine !== false) reg.update().catch(function () { /* offline: keep current version */ }); };
+        check();
+        document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') check(); });
+      }).catch(function () { /* offline cache unavailable */ });
     });
   }
   if (navigator.storage && navigator.storage.persist) {
