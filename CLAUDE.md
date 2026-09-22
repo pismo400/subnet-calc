@@ -67,8 +67,11 @@ GitHub Pagesで公開し、データセンター内などの圏外でも使え�
 
 ## iOS固有の回避策
 
-- iOS 26のホーム画面Webアプリで、WebKitがビューポート高さを上部safe-area分だけ短く報告し、最下部に余白が出る不具合への対策として、`fixViewport()` で差分を検出した場合のみ `--vh-fix` で `.app` の下端を伸ばす。保険として `html, body` の背景をタブバー色にしている。
-- **v2.7時点で、この補正が実機で効いたかは未確認。** ユーザーの確認結果を優先すること。
+- iOS 26のホーム画面Webアプリで、ビューポートが画面下端まで届かない。**v2.11で実機実測(iPhone / 402x874)**: `screen.height` 874 に対し `window.innerHeight` 812、`env(safe-area-inset-top)` 62。差の62pxが画面下端に残り、**この帯はページ側からは一切描画できない**(`position: fixed; bottom: -62px` でも届かない)。OSが `theme-color` で塗る領域。
+- したがって対策は2点。**`.app` の下端を伸ばす方法は無効なので復活させないこと**(v2.8/v2.9で試して失敗、v2.9はむしろ悪化)。
+  1. `<meta name="theme-color">` をタブバー背景色(`#FFFFFF` / ダーク `#1C1C1E`)と一致させ、帯が繋がって見えるようにする。手動テーマ切替とシステム切替の両方に追従させるため、mediaクエリ版のmetaは使わず `applyTheme()` がJSで値を設定する。保険として `html, body` の背景もタブバー色。
+  2. `fixViewport()` が検出した隠れ高さを `--vh-fix` に入れ、`--tabbar-pad-bottom`(= `max(8px, env(safe-area-inset-bottom) - var(--vh-fix))`)でタブバーの下パディングから差し引く。ホームインジケータ用の余白はビューポート外に既に存在するため、二重に空けない。
+- `--tabbar-pad-bottom` はタブバー・更新バナー・トーストの3箇所で共有している。
 
 ## テスト
 

@@ -6,8 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Subnet Calc">
-<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<!-- Must match the tab bar background: in an iOS home screen app the strip below the
+     (short) viewport is painted by the OS with this color. applyTheme() keeps it in sync. -->
+<meta name="theme-color" content="#FFFFFF">
 <meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -43,6 +44,10 @@
     --special-fg: #BF5AF2; --special-bg: rgba(191,90,242,0.2);
     --off-bg: #2C2C2E; --off-fg: #98989D;
   }
+  /* --vh-fix is the height iOS hides below the viewport (see fixViewport). That strip already
+     sits where the home indicator is, so the tab bar subtracts it from its own bottom padding
+     instead of stacking another safe-area gap on top of it. */
+  :root { --vh-fix: 0px; --tabbar-pad-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - var(--vh-fix))); }
   html, body { height: 100%; margin: 0; overflow: hidden; background: var(--tabbar-bg); }
   * { box-sizing: border-box; }
   body {
@@ -52,7 +57,7 @@
   }
   input, button { font-family: inherit; }
   [hidden] { display: none !important; }
-  .app { position: fixed; top: 0; right: 0; bottom: calc(0px - var(--vh-fix, 0px)); left: 0; display: flex; flex-direction: column; max-width: 600px; margin: 0 auto; background: var(--bg); }
+  .app { position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; max-width: 600px; margin: 0 auto; background: var(--bg); }
   .screens { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   .status-spacer { height: calc(env(safe-area-inset-top, 0px) + 8px); flex-shrink: 0; }
@@ -140,7 +145,7 @@
   .preset.active { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
 
   /* Tab bar + toast */
-  .tabbar { flex-shrink: 0; display: flex; background: var(--tabbar-bg); border-top: 1.5px solid var(--tabbar-border); box-shadow: 0 -4px 12px var(--tabbar-shadow); padding: 6px 8px max(8px, env(safe-area-inset-bottom, 0px)) 8px; position: relative; z-index: 1; }
+  .tabbar { flex-shrink: 0; display: flex; background: var(--tabbar-bg); border-top: 1.5px solid var(--tabbar-border); box-shadow: 0 -4px 12px var(--tabbar-shadow); padding: 6px 8px var(--tabbar-pad-bottom) 8px; position: relative; z-index: 1; }
   .tab-btn { flex: 1; background: none; border: none; padding: 0; min-height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .tab-inner { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 14px; border-radius: 14px; }
   .tab-btn svg { stroke: var(--inactive); }
@@ -150,10 +155,10 @@
   .tab-btn.active svg { stroke: var(--accent); }
   .tab-btn.active svg text { fill: var(--accent); }
   .tab-btn.active .tab-label { font-weight: 700; color: var(--accent); }
-  .update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 74px); width: calc(100% - 32px); max-width: 560px; background: var(--card); color: var(--text-primary); border: 1px solid var(--separator); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 9; }
+  .update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar-pad-bottom) + 74px); width: calc(100% - 32px); max-width: 560px; background: var(--card); color: var(--text-primary); border: 1px solid var(--separator); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 9; }
   .update-btn { flex-shrink: 0; min-height: 36px; padding: 0 16px; border-radius: 10px; border: none; background: var(--accent); color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer; }
   .app-version { font-size: 12px; color: var(--text-secondary); text-align: center; padding: 8px 0 4px 0; cursor: pointer; }
-  .toast { position: fixed; left: 50%; bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 80px); transform: translateX(-50%); max-width: calc(100% - 40px); background: var(--text-primary); color: var(--bg); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; z-index: 10; }
+  .toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-pad-bottom) + 80px); transform: translateX(-50%); max-width: calc(100% - 40px); background: var(--text-primary); color: var(--bg); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; z-index: 10; }
 </style>
 </head>
 <body>
@@ -298,57 +303,38 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = 'v2.10';
+  var APP_VERSION = 'v2.11';
 
   // ---------- iOS standalone viewport workaround ----------
-  // Disabled for now: v2.9's guess (add back screenH - innerHeight when small) made the
-  // cutoff worse on the reporter's device, so the underlying assumption is wrong.
-  // Kept as a no-op (--vh-fix always 0px) until real device numbers are collected via the
-  // temporary debug banner below. Do not re-guess without that data.
-  document.documentElement.style.setProperty('--vh-fix', '0px');
-  document.querySelectorAll('.app-version').forEach(function (el) { el.textContent = 'Subnet Calc ' + APP_VERSION; });
-
-  // ---------- TEMPORARY debug banner (remove once the PWA bottom-cutoff bug is diagnosed) ----------
-  (function () {
-    function safeAreaInsets() {
-      var probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;' +
-        'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);';
-      document.body.appendChild(probe);
-      var cs = window.getComputedStyle(probe);
-      var out = { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
-      document.body.removeChild(probe);
-      return out;
-    }
-    function collect() {
+  // Measured on an iPhone home screen app (iOS 26): screen 402x874, innerHeight 812,
+  // safe-area-inset-top 62. The viewport ends 62px above the physical bottom of the screen,
+  // and that strip cannot be painted from the page at all - the OS fills it with theme-color.
+  // So the fix is not to stretch .app into it (v2.8/v2.9 tried that and failed); it is to keep
+  // theme-color equal to the tab bar and to stop adding a bottom safe-area gap that already
+  // exists outside the viewport. --vh-fix carries that hidden height to --tabbar-pad-bottom.
+  function fixViewport() {
+    var fix = 0;
+    try {
       var standalone = window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-      var sa = safeAreaInsets();
-      var dvhOk = !!(window.CSS && CSS.supports && CSS.supports('height', '1dvh'));
-      return 'standalone=' + standalone +
-        ' inner=' + window.innerWidth + 'x' + window.innerHeight +
-        ' screen=' + screen.width + 'x' + screen.height +
-        ' safeTop=' + sa.top + ' safeBottom=' + sa.bottom +
-        ' dvhSupport=' + dvhOk;
-    }
-    var bar = document.createElement('div');
-    bar.id = 'debug-bar';
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99;' +
-      'padding:calc(env(safe-area-inset-top,0px) + 2px) 8px 2px 8px;' +
-      'font-size:10px;line-height:1.4;font-family:ui-monospace,monospace;' +
-      'background:rgba(255,204,0,0.92);color:#000;word-break:break-all;';
-    bar.textContent = collect();
-    bar.addEventListener('click', function () {
-      try {
-        navigator.clipboard.writeText(bar.textContent).then(function () {
-          bar.style.background = 'rgba(52,199,89,0.92)';
-          setTimeout(function () { bar.style.background = 'rgba(255,204,0,0.92)'; }, 400);
-        });
-      } catch (e) { /* ignore */ }
-    });
-    document.body.appendChild(bar);
-    window.addEventListener('resize', function () { bar.textContent = collect(); });
-  })();
+      if (standalone) {
+        var probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);';
+        document.body.appendChild(probe);
+        var safeTop = parseFloat(window.getComputedStyle(probe).paddingTop) || 0;
+        document.body.removeChild(probe);
+        var portrait = window.innerHeight >= window.innerWidth;
+        var screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+        var gap = screenH - window.innerHeight;
+        if (safeTop > 0 && gap > 0 && Math.abs(gap - safeTop) <= 2) fix = gap;
+      }
+    } catch (e) { fix = 0; }
+    document.documentElement.style.setProperty('--vh-fix', fix + 'px');
+  }
+  fixViewport();
+  window.addEventListener('resize', fixViewport);
+  window.addEventListener('orientationchange', function () { setTimeout(fixViewport, 300); });
+  document.querySelectorAll('.app-version').forEach(function (el) { el.textContent = 'Subnet Calc ' + APP_VERSION; });
 
   // ---------- Storage (best effort) ----------
   function storageGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -363,24 +349,30 @@
     if (o === 'light') return false;
     return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   }
-  function updateThemeIcons() {
+  function applyTheme() {
     var dark = isDark();
     document.querySelectorAll('.theme-toggle').forEach(function (b) {
       b.querySelector('svg').innerHTML = dark ? MOON : SUN;
       b.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
     });
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', dark ? '#1C1C1E' : '#FFFFFF');
   }
   var savedTheme = storageGet('subnetcalc.theme');
   if (savedTheme === 'dark' || savedTheme === 'light') document.documentElement.setAttribute('data-theme', savedTheme);
-  updateThemeIcons();
+  applyTheme();
   document.querySelectorAll('.theme-toggle').forEach(function (b) {
     b.addEventListener('click', function () {
       var next = isDark() ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
       storageSet('subnetcalc.theme', next);
-      updateThemeIcons();
+      applyTheme();
     });
   });
+  if (window.matchMedia) {
+    var darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    if (darkQuery.addEventListener) darkQuery.addEventListener('change', applyTheme);
+  }
 
   // ---------- Tabs ----------
   var screens = { calc: 'screen-calc', list: 'screen-list', binary: 'screen-binary' };
