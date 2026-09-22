@@ -164,9 +164,9 @@
       </div>
       <div class="scroll">
         <div class="group">
-          <label for="cidr-input" class="caption">IP Address / CIDR or Subnet Mask</label>
+          <div class="caption" aria-hidden="true">IP Address / CIDR or Subnet Mask</div>
           <div class="input-card">
-            <input id="cidr-input" type="text" inputmode="decimal" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="192.168.1.0.24" value="192.168.1.0/24">
+            <input id="cidr-input" name="subnet-search" aria-label="IPv4 CIDR or subnet mask" type="text" inputmode="decimal" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="192.168.1.0.24" value="192.168.1.0/24">
           </div>
           <div class="helper">ex. 192.168.1.0.24 (= /24), 192.168.1.0.255.255.255.0</div>
           <div class="error-text" id="error-text" hidden></div>
