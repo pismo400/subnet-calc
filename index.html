@@ -298,34 +298,57 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = 'v2.9';
+  var APP_VERSION = 'v2.10';
 
   // ---------- iOS standalone viewport workaround ----------
-  // In some iOS 26 home screen web apps, WebKit reports the viewport height short by exactly the top safe-area inset,
-  // which leaves an empty band under the tab bar. Measure it and add the missing height back only when that exact case is detected.
-  function fixViewport() {
-    var fix = 0;
-    try {
+  // Disabled for now: v2.9's guess (add back screenH - innerHeight when small) made the
+  // cutoff worse on the reporter's device, so the underlying assumption is wrong.
+  // Kept as a no-op (--vh-fix always 0px) until real device numbers are collected via the
+  // temporary debug banner below. Do not re-guess without that data.
+  document.documentElement.style.setProperty('--vh-fix', '0px');
+  document.querySelectorAll('.app-version').forEach(function (el) { el.textContent = 'Subnet Calc ' + APP_VERSION; });
+
+  // ---------- TEMPORARY debug banner (remove once the PWA bottom-cutoff bug is diagnosed) ----------
+  (function () {
+    function safeAreaInsets() {
+      var probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;' +
+        'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);';
+      document.body.appendChild(probe);
+      var cs = window.getComputedStyle(probe);
+      var out = { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+      document.body.removeChild(probe);
+      return out;
+    }
+    function collect() {
       var standalone = window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-      if (standalone) {
-        var portrait = window.innerHeight >= window.innerWidth;
-        var screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-        var gap = screenH - window.innerHeight;
-        // A real (non-buggy) viewport reports gap ~0 here, so any plausible positive gap
-        // (bounded well above the largest known iOS safe-area-inset-top, ~59px) is treated
-        // as this WebKit short-viewport bug rather than requiring an exact inset match.
-        if (gap > 0 && gap < 120) fix = gap;
-      }
-    } catch (e) { fix = 0; }
-    document.documentElement.style.setProperty('--vh-fix', fix + 'px');
-  }
-  fixViewport();
-  window.addEventListener('resize', fixViewport);
-  window.addEventListener('orientationchange', function () { setTimeout(fixViewport, 300); });
-  window.addEventListener('pageshow', function () { setTimeout(fixViewport, 50); });
-  setTimeout(fixViewport, 300);
-  document.querySelectorAll('.app-version').forEach(function (el) { el.textContent = 'Subnet Calc ' + APP_VERSION; });
+      var sa = safeAreaInsets();
+      var dvhOk = !!(window.CSS && CSS.supports && CSS.supports('height', '1dvh'));
+      return 'standalone=' + standalone +
+        ' inner=' + window.innerWidth + 'x' + window.innerHeight +
+        ' screen=' + screen.width + 'x' + screen.height +
+        ' safeTop=' + sa.top + ' safeBottom=' + sa.bottom +
+        ' dvhSupport=' + dvhOk;
+    }
+    var bar = document.createElement('div');
+    bar.id = 'debug-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99;' +
+      'padding:calc(env(safe-area-inset-top,0px) + 2px) 8px 2px 8px;' +
+      'font-size:10px;line-height:1.4;font-family:ui-monospace,monospace;' +
+      'background:rgba(255,204,0,0.92);color:#000;word-break:break-all;';
+    bar.textContent = collect();
+    bar.addEventListener('click', function () {
+      try {
+        navigator.clipboard.writeText(bar.textContent).then(function () {
+          bar.style.background = 'rgba(52,199,89,0.92)';
+          setTimeout(function () { bar.style.background = 'rgba(255,204,0,0.92)'; }, 400);
+        });
+      } catch (e) { /* ignore */ }
+    });
+    document.body.appendChild(bar);
+    window.addEventListener('resize', function () { bar.textContent = collect(); });
+  })();
 
   // ---------- Storage (best effort) ----------
   function storageGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
