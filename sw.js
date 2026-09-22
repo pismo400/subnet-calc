@@ -1,6 +1,6 @@
 // Subnet Calculator - offline cache
 // When you update any file, change this version string (e.g. v1 -> v2).
-const CACHE = 'subnet-calc-v1';
+const CACHE = 'subnet-calc-v2';
 const ASSETS = [
   './',
   './index.html',
