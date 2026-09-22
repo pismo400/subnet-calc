@@ -298,7 +298,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = 'v2.8';
+  var APP_VERSION = 'v2.9';
 
   // ---------- iOS standalone viewport workaround ----------
   // In some iOS 26 home screen web apps, WebKit reports the viewport height short by exactly the top safe-area inset,
@@ -309,15 +309,13 @@
       var standalone = window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
       if (standalone) {
-        var probe = document.createElement('div');
-        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);';
-        document.body.appendChild(probe);
-        var safeTop = parseFloat(window.getComputedStyle(probe).paddingTop) || 0;
-        document.body.removeChild(probe);
         var portrait = window.innerHeight >= window.innerWidth;
         var screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
         var gap = screenH - window.innerHeight;
-        if (safeTop > 0 && gap > 0 && Math.abs(gap - safeTop) <= 2) fix = gap;
+        // A real (non-buggy) viewport reports gap ~0 here, so any plausible positive gap
+        // (bounded well above the largest known iOS safe-area-inset-top, ~59px) is treated
+        // as this WebKit short-viewport bug rather than requiring an exact inset match.
+        if (gap > 0 && gap < 120) fix = gap;
       }
     } catch (e) { fix = 0; }
     document.documentElement.style.setProperty('--vh-fix', fix + 'px');
@@ -325,6 +323,8 @@
   fixViewport();
   window.addEventListener('resize', fixViewport);
   window.addEventListener('orientationchange', function () { setTimeout(fixViewport, 300); });
+  window.addEventListener('pageshow', function () { setTimeout(fixViewport, 50); });
+  setTimeout(fixViewport, 300);
   document.querySelectorAll('.app-version').forEach(function (el) { el.textContent = 'Subnet Calc ' + APP_VERSION; });
 
   // ---------- Storage (best effort) ----------

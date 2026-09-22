@@ -1,6 +1,6 @@
 // Subnet Calculator - offline cache
 // When you update any file, change VERSION (it must also match APP_VERSION in index.html).
-const VERSION = '2.8';
+const VERSION = '2.9';
 const CACHE = 'subnet-calc-' + VERSION;
 const ASSETS = [
   './',
