@@ -152,7 +152,7 @@
   .tab-btn.active .tab-label { font-weight: 700; color: var(--accent); }
   .update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 74px); width: calc(100% - 32px); max-width: 560px; background: var(--card); color: var(--text-primary); border: 1px solid var(--separator); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 9; }
   .update-btn { flex-shrink: 0; min-height: 36px; padding: 0 16px; border-radius: 10px; border: none; background: var(--accent); color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer; }
-  .app-version { font-size: 12px; color: var(--text-secondary); text-align: center; padding: 8px 0 4px 0; }
+  .app-version { font-size: 12px; color: var(--text-secondary); text-align: center; padding: 8px 0 4px 0; cursor: pointer; }
   .toast { position: fixed; left: 50%; bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 80px); transform: translateX(-50%); max-width: calc(100% - 40px); background: var(--text-primary); color: var(--bg); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; z-index: 10; }
 </style>
 </head>
@@ -298,7 +298,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = 'v2.7';
+  var APP_VERSION = 'v2.8';
 
   // ---------- iOS standalone viewport workaround ----------
   // In some iOS 26 home screen web apps, WebKit reports the viewport height short by exactly the top safe-area inset,
@@ -712,6 +712,8 @@
     var banner = document.getElementById('update-banner');
     var updateBtn = document.getElementById('update-btn');
     var userRequestedUpdate = false;
+    var swReg = null;
+    var checkingUpdate = false;
     var showUpdate = function (reg) {
       banner.hidden = false;
       updateBtn.onclick = function () {
@@ -725,8 +727,32 @@
       // Reload only when the user tapped "更新". The new version is already fully cached, so this works offline.
       if (userRequestedUpdate) window.location.reload();
     });
+    // Manual update check: tapping the version label at the bottom of a tab checks right now,
+    // instead of waiting for the next load/visibilitychange (which can be delayed by iOS's HTTP cache).
+    var manualUpdateCheck = function () {
+      if (!swReg) { showToast('準備中です。少し待ってから再度お試しください'); return; }
+      if (checkingUpdate) return;
+      checkingUpdate = true;
+      showToast('更新を確認しています…');
+      var found = false;
+      var onFound = function () { found = true; };
+      swReg.addEventListener('updatefound', onFound, { once: true });
+      swReg.update().then(function () {
+        setTimeout(function () {
+          swReg.removeEventListener('updatefound', onFound);
+          checkingUpdate = false;
+          if (!found && !(swReg.waiting && navigator.serviceWorker.controller)) showToast('最新版です(' + APP_VERSION + ')');
+        }, 1500);
+      }).catch(function () {
+        swReg.removeEventListener('updatefound', onFound);
+        checkingUpdate = false;
+        showToast('確認できませんでした(オフラインの可能性があります)');
+      });
+    };
+    document.querySelectorAll('.app-version').forEach(function (el) { el.addEventListener('click', manualUpdateCheck); });
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('./sw.js').then(function (reg) {
+        swReg = reg;
         var watch = function (worker) {
           worker.addEventListener('statechange', function () {
             if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdate(reg);
